@@ -5,6 +5,7 @@ from helpers.utils import NotImplemented
 # TODO: Import any modules you want to use
 from typing import Deque, Set, List, Tuple, Dict
 import heapq
+import itertools
 
 # All search functions take a problem and a state
 # If it is an informed search function, it will also receive a heuristic function
@@ -68,6 +69,8 @@ def BreadthFirstSearch(problem: Problem[S, A], initial_state: S) -> Solution:
 
 
 def DepthFirstSearch(problem: Problem[S, A], initial_state: S) -> Solution:
+    # TODO: ADD YOUR CODE HERE
+
     # Initially, check that if the initial state is the goal state, then why should we do more redundant work to retain it. BE QUICK .. TIME IS AN ASSET
     if problem.is_goal(initial_state):
         return []
@@ -92,6 +95,7 @@ def DepthFirstSearch(problem: Problem[S, A], initial_state: S) -> Solution:
         # we don not revisit our pre visited nodes.
         explored_set.add(state)
 
+        # Based-on the available actions from our current node, we need to expand the corrosponding child node
         for action in problem.get_actions(state):
             # Get the child node from the previous state, with the action required
             child = problem.get_successor(state, action)
@@ -108,9 +112,65 @@ def DepthFirstSearch(problem: Problem[S, A], initial_state: S) -> Solution:
     return None
 
 
-def UniformCostSearch(problem: Problem[S, A], initial_state: S) -> Solution:
+def UniformCostSearch(problem, initial_state) -> Solution:
     # TODO: ADD YOUR CODE HERE
-    NotImplemented()
+
+    # Initially, check that if the initial state is the goal state, then why should we do more redundant work to retain it. BE QUICK .. TIME IS AN ASSET
+
+    if problem.is_goal(initial_state):
+        return []
+
+    # The tie-breaker as when we multiple states in the heap, I want to process the least and the early processed state as heapq can not compare states
+    # what I mean is that when we have (1,5,A) and (1,6,B) the heap process the first tuple because the state A was coming in a counter before B so it would be
+    # processed at first, if we can removed it the heapq would crash as the states are not comparable
+    counter = itertools.count()
+    frontier: List[Tuple[float, int, S, List[A]]] = list(
+        [(0, next(counter), initial_state, [])]
+    )
+    heapq.heapify(frontier)
+
+    # Helper dictionary to keep track of the costs of states in the frontier
+    frontier_costs = {initial_state: 0}
+
+    # Define a set, which we could have a prior knowledge for which states are visited in the shortest levels, hence any cycle to a previsited node would not be an optimal
+    # solution because it would come from a shallower depth, and this is not our aim. We need to reach the nearest goal state optimally with the shprtest possible path
+    explored_set: Set[S] = set()
+
+    while frontier:
+        # Pop-out the early processed state with the least cost
+        cost, _, state, path = heapq.heappop(frontier)
+
+        # Skip outdated entries
+        if cost > frontier_costs.get(state, float("inf")):
+            continue
+
+        # Check that this child is the goal, we may make this check just after we retrieve from the successor function the child node
+        if problem.is_goal(state):
+            return path
+
+        # Push it to the explored set, since it is popped, it is reached from a near level from the initial state, and our search space is a space graph for that
+        # we don not revisit our pre visited nodes.
+        explored_set.add(state)
+
+        # Based-on the available actions from our current node, we need to expand the corrosponding child node
+        for action in problem.get_actions(state):
+            # Get the child node from the previous state, with the action required
+            child = problem.get_successor(state, action)
+
+            # Calculate tha actual cost from the inital state to the child
+            accumulative_cost = cost + problem.get_cost(state, action)
+
+            # Only consider if not explored or found cheaper path
+            if child not in explored_set and (
+                child not in frontier_costs or accumulative_cost < frontier_costs[child]
+            ):
+                frontier_costs[child] = accumulative_cost
+                heapq.heappush(
+                    frontier,
+                    (accumulative_cost, next(counter), child, path + [action]),
+                )
+
+    return None
 
 
 def AStarSearch(
