@@ -3,7 +3,7 @@ from collections import deque
 from helpers.utils import NotImplemented
 
 # TODO: Import any modules you want to use
-from typing import Deque, Set, List, Tuple
+from typing import Deque, Set, List, Tuple, Dict
 import heapq
 
 # All search functions take a problem and a state
@@ -68,8 +68,44 @@ def BreadthFirstSearch(problem: Problem[S, A], initial_state: S) -> Solution:
 
 
 def DepthFirstSearch(problem: Problem[S, A], initial_state: S) -> Solution:
-    # TODO: ADD YOUR CODE HERE
-    NotImplemented()
+    # Initially, check that if the initial state is the goal state, then why should we do more redundant work to retain it. BE QUICK .. TIME IS AN ASSET
+    if problem.is_goal(initial_state):
+        return []
+
+    # Define the data structure which we could track the node to be explored, and also store for each node its actions that result to reach it which is a stack in here
+    # and keep track also for each state its action that led to it
+    frontier: List[Tuple[S, List[A]]] = list([(initial_state, [])])
+
+    # Define a set, which we could have a prior knowledge for which states are visited in the shortest levels, hence any cycle to a previsited node would not be an optimal
+    # solution because it would come from a shallower depth, and this is not our aim. We need to reach the nearest goal state optimally with the shprtest possible path
+    explored_set: Set[S] = set()
+
+    while frontier:
+        # Pop-out from the frontier the upcoming node, in our level to be expanded
+        state, path = frontier.pop()
+
+        # Check that this child is the goal, we may make this check just after we retrieve from the successor function the child node
+        if problem.is_goal(state):
+            return path
+
+        # Push it to the explored set, since it is popped, it is reached from a near level from the initial state, and our search space is a space graph for that
+        # we don not revisit our pre visited nodes.
+        explored_set.add(state)
+
+        for action in problem.get_actions(state):
+            # Get the child node from the previous state, with the action required
+            child = problem.get_successor(state, action)
+
+            # Just get the states in the frontier
+            frontier_states = {s for s, _ in frontier}
+
+            # Check that this child is not visited before, and not in the waiting list (frontier) ... Don't forget -> SPACE GRAPH -> NO REVISIT
+            if child not in explored_set and child not in frontier_states:
+                # Append to the actions of the parent the action led to expand this child
+                frontier.append((child, path + [action]))
+
+    # What if our search space is ended and we still did not return ?! DEAD END -> NO GOAL EXISTS
+    return None
 
 
 def UniformCostSearch(problem: Problem[S, A], initial_state: S) -> Solution:
