@@ -176,12 +176,86 @@ def UniformCostSearch(problem, initial_state) -> Solution:
 def AStarSearch(
     problem: Problem[S, A], initial_state: S, heuristic: HeuristicFunction
 ) -> Solution:
-    # TODO: ADD YOUR CODE HERE
-    NotImplemented()
+    
+    if problem.is_goal(initial_state):
+        return []
+
+    counter = itertools.count()
+    frontier: List[Tuple[float, int, S, List[A]]] = list(
+        [(0, next(counter), 0, initial_state, [])]
+    )
+    heapq.heapify(frontier)
+
+    frontier_costs = {initial_state: 0}
+
+    explored_set: Set[S] = set()
+
+    while frontier:
+        f_cost, _, g_cost, state, path = heapq.heappop(frontier)
+
+        if f_cost > frontier_costs.get(state, float("inf")):
+            continue
+
+        if problem.is_goal(state):
+            return path
+        explored_set.add(state)
+
+        for action in problem.get_actions(state):
+            child = problem.get_successor(state, action)
+            new_g_cost = g_cost + problem.get_cost(state, action)
+            new_f_cost = new_g_cost + heuristic(problem, child)
+            
+            if child not in explored_set and (
+                child not in frontier_costs or new_f_cost < frontier_costs[child]
+            ):
+                frontier_costs[child] = new_f_cost
+                heapq.heappush(
+                    frontier,
+                    (new_f_cost, next(counter), new_g_cost, child, path + [action]),
+                )
+
+    return None
+
 
 
 def BestFirstSearch(
     problem: Problem[S, A], initial_state: S, heuristic: HeuristicFunction
 ) -> Solution:
-    # TODO: ADD YOUR CODE HERE
-    NotImplemented()
+    
+    if problem.is_goal(initial_state):
+        return []
+
+    counter = itertools.count()
+    frontier: List[Tuple[float, int, S, List[A]]] = list(
+        [(0, next(counter), initial_state, [])]
+    )
+    heapq.heapify(frontier)
+
+    frontier_costs = {initial_state: 0}
+
+    explored_set: Set[S] = set()
+
+    while frontier:
+        f_cost, _, state, path = heapq.heappop(frontier)
+
+        if f_cost > frontier_costs.get(state, float("inf")):
+            continue
+
+        if problem.is_goal(state):
+            return path
+        explored_set.add(state)
+
+        for action in problem.get_actions(state):
+            child = problem.get_successor(state, action)
+            new_f_cost = heuristic(problem, child)
+            
+            if child not in explored_set and (
+                child not in frontier_costs or new_f_cost < frontier_costs[child]
+            ):
+                frontier_costs[child] = new_f_cost
+                heapq.heappush(
+                    frontier,
+                    (new_f_cost, next(counter), child, path + [action]),
+                )
+
+    return None
