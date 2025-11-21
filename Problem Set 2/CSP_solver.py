@@ -71,7 +71,7 @@ def forward_checking(problem: Problem, assigned_variable: str, assigned_value: A
         # constraint.variables is a list/tuple. We pick the one that isn't the assigned_variable.
         other_variable = constraint.variables[0] if constraint.variables[1] == assigned_variable else constraint.variables[1]
         
-        # Instruction: "If the other variable has no domain (in other words, it is already assigned a value), skip this constraint."
+        # "If the other variable has no domain (in other words, it is already assigned a value), skip this constraint."
         # We assume the 'domains' dictionary contains keys only for unassigned variables.
         if other_variable not in domains:
             continue
@@ -90,11 +90,11 @@ def forward_checking(problem: Problem, assigned_variable: str, assigned_value: A
             if not constraint.is_satisfied(assignment):
                 values_to_remove.append(other_value)
         
-        # Instruction: "Update the other variable's domain to only include the values that satisfy the binary constraint"
+        # "Update the other variable's domain to only include the values that satisfy the binary constraint"
         for val in values_to_remove:
             other_domain.remove(val)
             
-        # Instruction: "If any variable's domain becomes empty, return False."
+        # "If any variable's domain becomes empty, return False."
         if not other_domain:
             return False
             
@@ -152,7 +152,6 @@ def least_restraining_values(problem: Problem, variable_to_assign: str, domains:
         scored_values.append((restraint_count, value))
         
     # Sort by score (ascending). 
-    # IMPORTANT: Tie-break by value (ascending) as per instructions.
     # This ensures deterministic behavior on empty grids where scores are equal.
     scored_values.sort(key=lambda x: (x[0], x[1]))
     
@@ -184,7 +183,7 @@ def solve(problem: Problem) -> Optional[Assignment]:
     
     def backtrack(assignment: Assignment, current_domains: Dict[str, set]) -> Optional[Assignment]:
         # 2. Check Completeness
-        # Instruction: "check if the assignment is complete only once... EXCEPT for the assignments pruned"
+        # "check if the assignment is complete only once... EXCEPT for the assignments pruned"
         if problem.is_complete(assignment):
             return assignment
         
