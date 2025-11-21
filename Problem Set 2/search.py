@@ -35,14 +35,117 @@ def minimax(game: Game[S, A], state: S, heuristic: HeuristicFunction, max_depth:
 # Apply Alpha Beta pruning and return the tree value and the best action
 # Hint: Read the hint for minimax.
 def alphabeta(game: Game[S, A], state: S, heuristic: HeuristicFunction, max_depth: int = -1) -> Tuple[float, A]:
-    #TODO: Complete this function
-    NotImplemented()
+    import math
+
+    # recursive helper: returns (value_for_player0, best_action_from_this_state) through exploring different states
+    def helper(s: S, depth: int, alpha: float, beta: float) -> Tuple[float, A]:
+        terminal, values = game.is_terminal(s)
+        # if terminal state -> return the player(0) value
+        if terminal:
+            return values[0], None
+
+        # depth cutoff (max_depth == -1 means no cutoff)
+        if max_depth != -1 and depth >= max_depth:
+            # evaluate from player 0's perspective at cutoff
+            return heuristic(game, s, 0), None
+
+        turn = game.get_turn(s)
+        actions = list(game.get_actions(s))
+
+        # max node (player 0)
+        if turn == 0:
+            best_val = -math.inf
+            best_action: A | None = None
+            for action in actions:
+                succ = game.get_successor(s, action)
+                val, _ = helper(succ, depth + 1, alpha, beta)
+                if val > best_val:
+                    best_val = val
+                    best_action = action
+                alpha = max(alpha, best_val)
+                if beta <= alpha:
+                    break  # beta cutoff
+            return best_val, best_action
+
+        # min node (enemies: turn > 0) - minimize the value for player 0
+        else:
+            best_val = math.inf
+            best_action: A | None = None
+            for action in actions:
+                succ = game.get_successor(s, action)
+                val, _ = helper(succ, depth + 1, alpha, beta)
+                if val < best_val:
+                    best_val = val
+                    best_action = action
+                beta = min(beta, best_val)
+                if beta <= alpha:
+                    break  # alpha cutoff
+            return best_val, best_action
+
+    value, action = helper(state, 0, -float('inf'), float('inf'))
+    return value, action
+
 
 # Apply Alpha Beta pruning with move ordering and return the tree value and the best action
 # Hint: Read the hint for minimax.
 def alphabeta_with_move_ordering(game: Game[S, A], state: S, heuristic: HeuristicFunction, max_depth: int = -1) -> Tuple[float, A]:
-    #TODO: Complete this function
-    NotImplemented()
+    import math
+    from typing import List, Tuple
+
+    def helper(s: S, depth: int, alpha: float, beta: float) -> Tuple[float, A]:
+        terminal, values = game.is_terminal(s)
+        if terminal:
+            return values[0], None
+
+        if max_depth != -1 and depth >= max_depth:
+            return heuristic(game, s, 0), None
+
+        turn = game.get_turn(s)
+        actions = list(game.get_actions(s))
+
+        # Prepare move ordering: compute heuristic value for successor states
+        # Use enumerate to preserve original order for stable tie-breaking
+        ordered: List[Tuple[int, A, S, float]] = []
+        for idx, action in enumerate(actions):
+            succ = game.get_successor(s, action)
+            # use player-0 perspective for ordering heuristic
+            hval = heuristic(game, succ, 0)
+            ordered.append((idx, action, succ, hval))
+
+        # sort: for max node (player 0) descending heuristic, for min node ascending heuristic
+        if turn == 0:
+            ordered.sort(key=lambda t: (-t[3], t[0]))  # higher h first, stable by idx
+        else:
+            ordered.sort(key=lambda t: (t[3], t[0]))   # lower h first, stable by idx
+
+        if turn == 0:
+            best_val = -math.inf
+            best_action: A | None = None
+            for _, action, succ, _ in ordered:
+                val, _ = helper(succ, depth + 1, alpha, beta)
+                if val > best_val:
+                    best_val = val
+                    best_action = action
+                alpha = max(alpha, best_val)
+                if beta <= alpha:
+                    break
+            return best_val, best_action
+        else:
+            best_val = math.inf
+            best_action: A | None = None
+            for _, action, succ, _ in ordered:
+                val, _ = helper(succ, depth + 1, alpha, beta)
+                if val < best_val:
+                    best_val = val
+                    best_action = action
+                beta = min(beta, best_val)
+                if beta <= alpha:
+                    break
+            return best_val, best_action
+
+    value, action = helper(state, 0, -float('inf'), float('inf'))
+    return value, action
+
 
 # Apply Expectimax search and return the tree value and the best action
 # Hint: Read the hint for minimax, but note that the monsters (turn > 0) do not act as min nodes anymore,
