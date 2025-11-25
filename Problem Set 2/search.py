@@ -107,6 +107,7 @@ def alphabeta(
             # evaluate from player 0's perspective at cutoff
             return heuristic(game, s, 0), None
 
+        # get turn and actions for current state
         turn = game.get_turn(s)
         actions = list(game.get_actions(s))
 
