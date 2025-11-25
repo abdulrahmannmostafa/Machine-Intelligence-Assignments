@@ -214,5 +214,52 @@ def alphabeta_with_move_ordering(
 def expectimax(
     game: Game[S, A], state: S, heuristic: HeuristicFunction, max_depth: int = -1
 ) -> Tuple[float, A]:
-    # TODO: Complete this function
-    NotImplemented()
+    terminal, values = game.is_terminal(state)
+    if terminal:
+        return values[0], None  # return player 0's value with no action
+
+    if max_depth != -1 and max_depth == 0:
+        return heuristic(game, state, 0), None  # cutoff at max_depth
+
+    # get turn and actions for current state
+    turn = game.get_turn(state)
+    actions = list(game.get_actions(state))
+
+    best_val = float("inf")
+    best_action: A | None = None
+    if turn == 0:  # max node (player 0)
+        best_val = -best_val
+        for action in actions:
+            succ = game.get_successor(
+                state, action
+            )  # get successor state for current action for the next level
+            val, _ = expectimax(
+                game,
+                succ,
+                heuristic,
+                (
+                    max_depth - 1 if max_depth != -1 else -1
+                ),  # decrease depth for next level
+            )
+            if (
+                val > best_val
+            ):  # update best value and action for max node to maximize player 0's value
+                best_val = val
+                best_action = action
+        return best_val, best_action
+
+    # chance node (enemies: turn > 0) - average the values for player 0
+    total_val = 0.0
+    for action in actions:
+        succ = game.get_successor(state, action)
+        val, _ = expectimax(
+            game,
+            succ,
+            heuristic,
+            max_depth - 1 if max_depth != -1 else -1,  # decrease depth for next level
+        )
+        total_val += val
+    average_val = (
+        total_val / len(actions) if actions else 0.0
+    )  # avoid division by zero otherwise average the values over actions for expectation to player 0
+    return average_val, None
