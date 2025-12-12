@@ -49,8 +49,8 @@ class GridMDP(MarkovDecisionProcess[Point, Direction]):
     def get_successor(self, state: Point, action: Direction) -> Dict[Point, float]:
         noisy_actions = [
             (action, 1 - self.noise),
-            (action.rotate(1), 0.5 * self.noise),
-            (action.rotate(3), 0.5 * self.noise)
+            (action.rotate(1), 0.5 * self.noise), 
+            (action.rotate(3), 0.5 * self.noise) 
         ]
         states = {}
         for direction, prob in noisy_actions:
